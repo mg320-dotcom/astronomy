@@ -1,2 +1,2 @@
-# astronomy
-초신성 수업 홈페이지
+[embed.html](https://github.com/user-attachments/files/28746771/embed.html)
+[index.html](https://github.com/user-attachments/files/28746773/index.html)
