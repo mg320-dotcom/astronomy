@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ia형 초신성으로 밝히는 우주의 가속 팽창</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<style>
+  :root{
+    --bg:#0a0e1a; --bg2:#111933; --card:#161f3d; --card2:#1d294d;
+    --line:#2a3a66; --txt:#e8edff; --mut:#9fb0d8; --acc:#5b8cff;
+    --acc2:#9d7bff; --warn:#ffb454; --data:#4db6ff; --fit:#ff5d6c;
+    --ok:#46d39a; --darkE:#9d7bff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #1a2550 0%, transparent 60%),
+      radial-gradient(900px 500px at 0% 10%, #241a4d 0%, transparent 55%),
+      var(--bg);
+    color:var(--txt); line-height:1.7; -webkit-font-smoothing:antialiased;
+  }
+  /* starfield */
+  .stars{position:fixed; inset:0; z-index:-1; overflow:hidden}
+  .stars::before,.stars::after{
+    content:""; position:absolute; inset:-50%;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, #fff, transparent),
+      radial-gradient(1px 1px at 60% 70%, #cfe, transparent),
+      radial-gradient(1.5px 1.5px at 80% 20%, #fff, transparent),
+      radial-gradient(1px 1px at 40% 80%, #bcd, transparent),
+      radial-gradient(1px 1px at 90% 60%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 10% 60%, #def, transparent);
+    background-size:300px 300px; opacity:.5;
+  }
+  .stars::after{background-size:200px 200px; opacity:.3}
+  header.hero{
+    max-width:960px; margin:0 auto; padding:90px 24px 50px; text-align:center;
+  }
+  .badge{display:inline-block; padding:6px 16px; border:1px solid var(--line);
+    border-radius:999px; color:var(--acc); font-size:.85rem; letter-spacing:.5px;
+    background:rgba(91,140,255,.08); margin-bottom:22px}
+  h1{font-size:2.6rem; line-height:1.25; margin:0 0 18px; font-weight:800;
+    background:linear-gradient(120deg,#fff 20%,#9bb6ff 60%,#c4a8ff 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent}
+  .sub{color:var(--mut); font-size:1.15rem; max-width:680px; margin:0 auto}
+  /* nav */
+  nav{position:sticky; top:0; z-index:50; backdrop-filter:blur(12px);
+    background:rgba(10,14,26,.72); border-bottom:1px solid var(--line)}
+  nav .inner{max-width:1040px; margin:0 auto; display:flex; gap:4px; padding:8px 16px;
+    overflow-x:auto; scrollbar-width:none}
+  nav .inner::-webkit-scrollbar{display:none}
+  nav a{color:var(--mut); text-decoration:none; padding:8px 13px; border-radius:8px;
+    font-size:.9rem; white-space:nowrap; transition:.15s}
+  nav a:hover{color:var(--txt); background:var(--card2)}
+  main{max-width:1040px; margin:0 auto; padding:20px 16px 80px}
+  section{margin:54px 0; scroll-margin-top:64px}
+  .eyebrow{color:var(--acc2); font-weight:700; font-size:.95rem; letter-spacing:1px;
+    text-transform:uppercase; margin-bottom:6px}
+  h2{font-size:1.9rem; margin:6px 0 16px; font-weight:800}
+  h3{font-size:1.3rem; margin:26px 0 10px; font-weight:700; color:#dfe7ff}
+  p{color:#d6deff}
+  .card{background:linear-gradient(180deg,var(--card),var(--bg2));
+    border:1px solid var(--line); border-radius:18px; padding:26px 26px;
+    box-shadow:0 20px 50px -30px rgba(0,0,0,.8)}
+  .card+.card{margin-top:18px}
+  .goal{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:8px}
+  .goal .g{background:var(--card2); border:1px solid var(--line); border-radius:14px; padding:18px}
+  .goal .g b{display:block; color:var(--acc); margin-bottom:6px; font-size:1.05rem}
+  .goal .g span{color:var(--mut); font-size:.92rem}
+  .lead{font-size:1.12rem; color:#e7ecff}
+  .pill{display:inline-block; background:var(--card2); border:1px solid var(--line);
+    padding:2px 10px; border-radius:8px; font-size:.85em; color:var(--acc)}
+  .keyword{color:var(--warn); font-weight:700}
+  .accent{color:var(--acc2); font-weight:700}
+  /* activity blocks */
+  .act{border:1px solid var(--acc); border-radius:18px; overflow:hidden;
+    box-shadow:0 0 0 1px rgba(91,140,255,.15), 0 24px 60px -34px rgba(91,140,255,.5)}
+  .act-head{background:linear-gradient(120deg,rgba(91,140,255,.18),rgba(157,123,255,.12));
+    padding:16px 24px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--line)}
+  .act-head .n{flex:0 0 auto; width:36px; height:36px; border-radius:10px;
+    background:var(--acc); color:#06122e; font-weight:800; display:grid; place-items:center; font-size:1.1rem}
+  .act-head h3{margin:0; color:#fff}
+  .act-body{padding:22px 24px}
+  .plot{width:100%; height:440px; background:#0c1326; border-radius:12px; border:1px solid var(--line)}
+  .controls{display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end; margin:18px 0 6px}
+  .ctrl{flex:1 1 220px; min-width:200px}
+  .ctrl label{display:flex; justify-content:space-between; font-size:.92rem; color:var(--mut); margin-bottom:6px}
+  .ctrl label b{color:var(--txt); font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%; accent-color:var(--acc); height:6px}
+  .btn{cursor:pointer; border:none; border-radius:10px; padding:11px 18px; font-size:.95rem;
+    font-weight:700; font-family:inherit; transition:.15s; color:#06122e;
+    background:linear-gradient(120deg,#6fa0ff,#9d7bff)}
+  .btn:hover{filter:brightness(1.1); transform:translateY(-1px)}
+  .btn.ghost{background:transparent; color:var(--acc); border:1px solid var(--acc)}
+  .btn.ghost:hover{background:rgba(91,140,255,.12)}
+  .btnrow{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px}
+  .readout{display:flex; flex-wrap:wrap; gap:14px; margin-top:16px}
+  .stat{background:var(--card2); border:1px solid var(--line); border-radius:12px;
+    padding:12px 18px; min-width:140px}
+  .stat .k{font-size:.8rem; color:var(--mut)}
+  .stat .v{font-size:1.5rem; font-weight:800; font-variant-numeric:tabular-nums; color:#fff}
+  .stat .v small{font-size:.7em; color:var(--mut); font-weight:600}
+  .stat.good .v{color:var(--ok)}
+  /* question / answer */
+  .q{margin-top:18px; border-left:4px solid var(--warn); background:rgba(255,180,84,.07);
+    padding:14px 18px; border-radius:0 12px 12px 0}
+  .q .lab{color:var(--warn); font-weight:800; font-size:.85rem; letter-spacing:1px}
+  details{margin-top:12px; background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:0 18px}
+  details[open]{padding-bottom:14px}
+  summary{cursor:pointer; padding:14px 0; font-weight:700; color:var(--acc); list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ "; color:var(--acc)}
+  details[open] summary::before{content:"▾ "}
+  details .ans{color:#d6deff; border-top:1px solid var(--line); padding-top:12px}
+  .note{background:rgba(70,211,154,.07); border:1px solid rgba(70,211,154,.3); border-radius:12px;
+    padding:14px 18px; margin-top:16px; font-size:.95rem}
+  .note b{color:var(--ok)}
+  .timeline{position:relative; margin:20px 0 0; padding-left:26px}
+  .timeline::before{content:""; position:absolute; left:7px; top:6px; bottom:6px; width:2px; background:var(--line)}
+  .tl{position:relative; margin-bottom:20px}
+  .tl::before{content:""; position:absolute; left:-26px; top:6px; width:14px; height:14px;
+    border-radius:50%; background:var(--acc); box-shadow:0 0 0 4px rgba(91,140,255,.2)}
+  .tl b{color:#fff}
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media(max-width:720px){.two{grid-template-columns:1fr} h1{font-size:2rem}}
+  footer{max-width:1040px; margin:0 auto; padding:30px 16px 60px; color:var(--mut); font-size:.88rem;
+    border-top:1px solid var(--line)}
+  footer a{color:var(--acc)}
+  .kbd{font-family:monospace; background:#0c1326; border:1px solid var(--line); border-radius:6px;
+    padding:1px 7px; font-size:.88em; color:#bcd}
+  mark{background:rgba(255,93,108,.25); color:#ffd; padding:0 4px; border-radius:4px}
+  .hl-up{color:var(--fit); font-weight:700}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+
+<nav><div class="inner">
+  <a href="#intro">학습 목표</a>
+  <a href="#story1">① 감속하는 우주</a>
+  <a href="#story2">② 표준 촛불</a>
+  <a href="#act1">활동 1 · 데이터</a>
+  <a href="#act2">활동 2 · 허블 상수</a>
+  <a href="#act3">활동 3 · 먼 우주</a>
+  <a href="#act4">활동 4 · 가속 발견</a>
+  <a href="#conclusion">결론 · 암흑에너지</a>
+  <a href="#teacher">교사용 노트</a>
+</div></nav>
+
+<header class="hero">
+  <span class="badge">데이터 사이언스 × 천문학 탐구 수업</span>
+  <h1>1998년, 데이터가 뒤집은 우주<br>— Ia형 초신성으로 찾는 가속 팽창의 증거</h1>
+  <p class="sub">실제 논문에서 관측된 초신성 데이터를 직접 그래프로 그리고, 슬라이더를 움직이며
+  우주가 <b style="color:#fff">왜 점점 빨리 팽창</b>하는지 여러분의 손으로 발견합니다.</p>
+</header>
+
+<main>
+
+<!-- ============ 학습 목표 ============ -->
+<section id="intro">
+  <div class="card">
+    <div class="eyebrow">학습 목표</div>
+    <h2>이 수업이 끝나면 여러분은…</h2>
+    <p class="lead">실제 초신성 관측 데이터를 분석하여 <span class="accent">우주가 가속 팽창하고 있다는 증거</span>를
+    스스로 해석할 수 있습니다.</p>
+    <div class="goal">
+      <div class="g"><b>① 그린다</b><span>실제 Ia형 초신성 206개의 적색편이–거리 데이터를 산점도로 시각화한다.</span></div>
+      <div class="g"><b>② 측정한다</b><span>허블 법칙으로 모델을 맞춰(fitting) 허블 상수를 직접 구한다.</span></div>
+      <div class="g"><b>③ 발견한다</b><span>먼 초신성이 예상보다 어둡다(멀다)는 사실을 그래프에서 찾아낸다.</span></div>
+      <div class="g"><b>④ 해석한다</b><span>감속 매개변수가 음수임을 확인하고 암흑에너지의 존재를 추론한다.</span></div>
+    </div>
+    <div class="note"><b>오늘의 핵심 질문 →</b> 멀리 있는 초신성이 “원래 예상보다 어둡게” 보인다면,
+    이것은 우주에 대해 무엇을 말해줄까?</div>
+  </div>
+</section>
+
+<!-- ============ 이야기 1 ============ -->
+<section id="story1">
+  <div class="eyebrow">배경 이야기 ①</div>
+  <h2>당연히 ‘감속’하고 있을 줄 알았던 우주</h2>
+  <div class="card">
+    <p>1990년대 후반까지 과학계의 지배적인 생각은 <span class="keyword">“우주의 팽창 속도가 점점 느려지고 있을 것”</span>(감속 팽창)이었습니다.</p>
+    <div class="timeline">
+      <div class="tl"><b>빅뱅의 여운</b><br>우주는 대폭발로 사방으로 멀어지기 시작했습니다.</div>
+      <div class="tl"><b>중력의 제동</b><br>수많은 은하와 물질이 서로 끌어당기는 중력 때문에, 팽창 속도는 시간이 갈수록 브레이크가 걸린 듯 느려져야 “마땅”했습니다.</div>
+      <div class="tl"><b>당시의 목표</b><br>그래서 과학자들의 목표는 우주가 <i>얼마나 빠르게 느려지고 있는지</i>(감속도)를 측정하는 것이었습니다.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 이야기 2 ============ -->
+<section id="story2">
+  <div class="eyebrow">배경 이야기 ②</div>
+  <h2>완벽한 기준자, ‘Ia형 초신성’</h2>
+  <div class="card">
+    <p>먼 은하가 얼마나 빨리 멀어지는지 알려면 정확한 <span class="pill">거리</span>가 필요합니다.
+    이때 우주에서 가장 완벽한 <span class="keyword">‘표준 촛불(Standard Candle)’</span>로 선택된 것이 Ia형 초신성입니다.</p>
+    <div class="two">
+      <div>
+        <h3>왜 ‘표준’ 촛불일까?</h3>
+        <p>백색왜성이 짝별에서 물질을 빨아들이다 태양 질량의 약 <b>1.44배(찬드라세카르 한계)</b>에 도달하는 순간 폭발합니다.
+        폭발 조건이 늘 똑같기 때문에 <span class="accent">원래 밝기(절대등급)가 거의 동일</span>합니다.</p>
+      </div>
+      <div>
+        <h3>거리를 재는 열쇠</h3>
+        <p>원래 밝기를 아니까, 지구에서 <b>얼마나 어둡게 보이는지(겉보기 밝기)</b>만 재면
+        그 초신성까지의 <span class="accent">정확한 거리</span>를 계산할 수 있습니다.
+        “어둡다 = 멀다”가 성립하는 것이죠.</p>
+      </div>
+    </div>
+    <div class="note"><b>데이터의 구성 →</b> 우리가 쓸 데이터는 각 초신성의
+    <span class="kbd">z</span>(적색편이 = 멀어지는 정도)와
+    <span class="kbd">d</span>(거리, 단위 Mpc), 그리고 측정 오차 <span class="kbd">d_err</span>로 이루어져 있습니다.</div>
+  </div>
+</section>
+
+<!-- ============ 활동 1 ============ -->
+<section id="act1">
+  <div class="eyebrow">예상을 뒤엎은 데이터 ③</div>
+  <h2>활동 1 — 실제 데이터를 그래프로 그리기</h2>
+  <p class="lead">1998년, 두 연구팀(펄무터의 ‘초신성 우주론 프로젝트’, 슈미트·리스의 ‘하이-z 탐색’)이 분석한
+  것과 같은 종류의 <b>실제 초신성 206개</b> 데이터입니다. 먼저 눈으로 봅시다.</p>
+
+  <div class="act">
+    <div class="act-head"><div class="n">1</div><h3>적색편이(z) – 거리(d) 산점도</h3></div>
+    <div class="act-body">
+      <div id="plot1" class="plot"></div>
+      <div class="btnrow">
+        <button class="btn" onclick="drawPlot1(true)">데이터 그리기 ▶</button>
+        <button class="btn ghost" onclick="togglePlot1Err()">오차 막대 켜기/끄기</button>
+      </div>
+      <div class="q">
+        <span class="lab">관찰 질문 Q1</span>
+        <p style="margin:6px 0 0">적색편이 <span class="kbd">z</span>가 커질수록(=더 멀리, 더 옛날의 우주일수록)
+        거리 <span class="kbd">d</span>는 어떻게 변하나요? 점들은 직선처럼 늘어서나요, 아니면 휘어지나요?</p>
+      </div>
+      <details><summary>관찰 도움말 보기</summary>
+        <div class="ans">전체적으로 z가 커질수록 d도 커집니다(멀어질수록 거리도 멀다 — 허블의 법칙!).
+        가까운 곳(z가 작은 곳)에서는 거의 직선이지만, 먼 곳으로 갈수록 점들이 살짝 위로 휘어 오르는 듯 보입니다.
+        이 ‘휘어짐’이 오늘의 핵심 단서입니다.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 활동 2 ============ -->
+<section id="act2">
+  <div class="eyebrow">허블의 법칙</div>
+  <h2>활동 2 — 허블 상수를 직접 구하기</h2>
+  <p class="lead">허블의 법칙은 <span class="pill">후퇴속도 V = H × 거리 R</span> 입니다.
+  적색편이로 속도를 나타내면 <b>V = c·z</b> 이므로,
+  거리는 <b>d = c·z / H</b> 인 <span class="accent">직선</span>이 됩니다.
+  허블 법칙이 깔끔하게 성립하는 <b>가까운 초신성(z ≤ 0.1)</b>으로,
+  빨간 직선의 기울기를 바꿔 가장 잘 맞는 <span class="keyword">허블 상수 H</span>를 직접 찾아보세요!</p>
+
+  <div class="act">
+    <div class="act-head"><div class="n">2</div><h3>선형 모델 맞추기 — 가까운 초신성으로 H 측정하기</h3></div>
+    <div class="act-body">
+      <div id="plot2" class="plot"></div>
+      <div class="controls">
+        <div class="ctrl">
+          <label>허블 상수 H <b><span id="Hval">70</span> km/s/Mpc</b></label>
+          <input type="range" id="Hslider" min="50" max="100" step="0.5" value="70" oninput="updatePlot2()">
+        </div>
+      </div>
+      <div class="readout">
+        <div class="stat"><div class="k">현재 H</div><div class="v"><span id="Hstat">70</span> <small>km/s/Mpc</small></div></div>
+        <div class="stat" id="chiBox"><div class="k">카이제곱 χ² (작을수록 잘 맞음)</div><div class="v"><span id="chiStat">–</span></div></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" onclick="bestFitLinear()">✨ 최적값 자동으로 찾기</button>
+        <button class="btn ghost" onclick="resetH()">초기화</button>
+      </div>
+      <div class="note"><b>카이제곱(χ²)이란?</b> 모델 선이 데이터에서 벗어난 정도를 오차로 나눠 모두 더한 값입니다.
+      <b>작을수록 모델이 데이터를 잘 설명</b>한다는 뜻이에요. 슬라이더를 움직여 χ²가 가장 작아지는 H를 찾아보세요.</div>
+      <div class="q">
+        <span class="lab">탐구 질문 Q2</span>
+        <p style="margin:6px 0 0">χ²가 최소가 되는 허블 상수는 약 얼마인가요?
+        가까운 우주에서 허블 법칙(직선)은 잘 맞나요?</p>
+      </div>
+      <details><summary>해설 보기</summary>
+        <div class="ans">‘최적값 자동으로 찾기’를 누르면 약 <b>H ≈ 63 km/s/Mpc</b> 부근에서 χ²가 최소가 됩니다
+        (오늘날 정밀 측정값 67~70과 같은 규모 — 학생이 데이터로 직접 측정한 값!).
+        가까운 우주에서는 직선이 데이터를 아주 잘 통과합니다.
+        <mark>그렇다면 이 직선을 먼 우주까지 그대로 늘이면 어떻게 될까요?</mark> 활동 3에서 확인합니다.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 활동 3 ============ -->
+<section id="act3">
+  <div class="eyebrow">결정적 단서</div>
+  <h2>활동 3 — 먼 우주의 비밀: “어라, 왜 이렇게 어둡지?”</h2>
+  <p class="lead">가까운 초신성만 골라 허블 상수를 정한 뒤, 그 직선을 <b>먼 우주까지 그대로 연장</b>해 봅시다.
+  먼 초신성들은 이 ‘예상선’ 위에 놓일까요, 아래에 놓일까요?</p>
+
+  <div class="act">
+    <div class="act-head"><div class="n">3</div><h3>가까운 데이터로 정한 직선 vs 실제 먼 데이터</h3></div>
+    <div class="act-body">
+      <div id="plot3" class="plot"></div>
+      <div class="btnrow">
+        <button class="btn" onclick="drawPlot3()">예상선 연장해서 비교하기 ▶</button>
+        <button class="btn ghost" onclick="togglePlot3Residual()">‘예상보다 얼마나 먼가’ 보기</button>
+      </div>
+      <div class="readout">
+        <div class="stat"><div class="k">가까운 데이터로 구한 H</div><div class="v"><span id="HlowStat">–</span> <small>km/s/Mpc</small></div></div>
+        <div class="stat good"><div class="k">먼 초신성이 예상보다…</div><div class="v" style="font-size:1.15rem; line-height:1.3" id="farMsg">더 멀다 = 더 어둡다</div></div>
+      </div>
+      <div class="q">
+        <span class="lab">핵심 해석 질문 Q3</span>
+        <p style="margin:6px 0 0">먼 초신성들은 가까운 데이터로 그은 직선보다
+        <b>위(더 멀다)</b>에 있나요, <b>아래(더 가깝다)</b>에 있나요?
+        그리고 “원래 예상보다 어둡게 보인다”는 것은 그 초신성이 우리 예상보다 <b>더 가깝다는</b> 뜻일까요, <b>더 멀다는</b> 뜻일까요?</p>
+      </div>
+      <details><summary>해설 보기</summary>
+        <div class="ans">먼 초신성들은 예상선보다 <span class="hl-up">위쪽(더 멀리)</span>에 놓입니다.
+        ‘표준 촛불’은 원래 밝기가 같으므로 <b>더 어둡게 보인다 = 더 멀리 있다</b>는 뜻입니다.
+        즉 같은 적색편이인데도 우리가 예상한 거리보다 더 멀리 가 있다는 것 —
+        <mark>과거의 우주는 우리 예상보다 천천히 팽창했고, 그 뒤 점점 빨라졌다</mark>는 신호입니다.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 활동 4 ============ -->
+<section id="act4">
+  <div class="eyebrow">가속 팽창의 증명</div>
+  <h2>활동 4 — 감속? 가속? 곡선으로 판별하기</h2>
+  <p class="lead">직선으로는 부족합니다. 팽창이 느려지는지(감속) 빨라지는지(가속)를 담는
+  <span class="accent">감속 매개변수 q</span>가 들어간 곡선 모델을 써 봅시다.</p>
+  <p style="text-align:center; font-size:1.15rem; background:var(--card2); border:1px solid var(--line);
+     border-radius:12px; padding:14px; color:#fff">
+     d = (c / H) · [ z + ½(1 − q) z² ]
+  </p>
+  <p><b>q &gt; 0</b> 이면 우주는 <span class="keyword">감속</span>(브레이크), <b>q &lt; 0</b> 이면
+  <span class="hl-up">가속</span>(액셀)하고 있다는 뜻입니다. 두 슬라이더를 움직여 데이터에 가장 잘 맞는 곡선을 찾아보세요.</p>
+
+  <div class="act">
+    <div class="act-head"><div class="n">4</div><h3>2차(곡선) 모델 맞추기 — H와 q 동시에 조절</h3></div>
+    <div class="act-body">
+      <div id="plot4" class="plot"></div>
+      <div class="controls">
+        <div class="ctrl">
+          <label>허블 상수 H <b><span id="H4val">70</span> km/s/Mpc</b></label>
+          <input type="range" id="H4slider" min="50" max="100" step="0.5" value="70" oninput="updatePlot4()">
+        </div>
+        <div class="ctrl">
+          <label>감속 매개변수 q <b><span id="qval">0.5</span></b></label>
+          <input type="range" id="qslider" min="-2" max="1.5" step="0.05" value="0.5" oninput="updatePlot4()">
+        </div>
+      </div>
+      <div class="readout">
+        <div class="stat"><div class="k">카이제곱 χ²</div><div class="v"><span id="chi4Stat">–</span></div></div>
+        <div class="stat" id="qBox"><div class="k">감속 매개변수 q</div><div class="v"><span id="qStat">0.5</span></div></div>
+        <div class="stat" id="verdictBox"><div class="k">우주는 지금…</div><div class="v" style="font-size:1.2rem" id="verdict">?</div></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" onclick="bestFitQuad()">✨ 데이터에 가장 잘 맞는 곡선 찾기</button>
+        <button class="btn ghost" onclick="resetQuad()">초기화</button>
+      </div>
+      <div class="note" id="darkNote" style="display:none"><b>암흑에너지 비율 추정 →</b>
+        <span id="darkMsg"></span></div>
+      <div class="q">
+        <span class="lab">결론 질문 Q4</span>
+        <p style="margin:6px 0 0">데이터에 가장 잘 맞는 q의 부호는 <b>양수</b>인가요 <b>음수</b>인가요?
+        그렇다면 우주는 감속하고 있나요, 가속하고 있나요?
+        — Ia형 초신성이 예상보다 어둡게 관측된다는 것은 결국 우리에게 무엇을 알려주나요?</p>
+      </div>
+      <details><summary>해설 보기</summary>
+        <div class="ans">‘가장 잘 맞는 곡선 찾기’를 누르면 q가 <b>음수</b>로 나옵니다.
+        q &lt; 0 → <span class="hl-up">우주는 가속 팽창하고 있다!</span>
+        중력만 있다면 절대 나올 수 없는 결과입니다. 무언가가 중력을 이기고 우주를 밀어내고 있다는 뜻이며,
+        그 정체불명의 힘을 과학자들은 <span class="accent">‘암흑에너지’</span>라 불렀습니다.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 결론 ============ -->
+<section id="conclusion">
+  <div class="eyebrow">패러다임의 전환 ④</div>
+  <h2>‘암흑에너지’의 등장</h2>
+  <div class="card">
+    <p class="lead">물질의 중력을 이기고 우주를 더 빠르게 밀어내려면, 중력에 반하는 거대한
+    <span class="keyword">‘척력(밀어내는 힘)’</span>이 존재해야만 했습니다.</p>
+    <p>과학자들은 이 정체불명의 힘을 <span class="accent">‘암흑에너지(Dark Energy)’</span>라고 부르기 시작했습니다.
+    오늘날 우주의 약 <b>68%</b>가 암흑에너지로 이루어진 것으로 추정됩니다.
+    이 발견의 공로로 <b>사울 펄무터, 브라이언 슈미트, 아담 리스</b>는 <span class="pill">2011년 노벨 물리학상</span>을 받았습니다.</p>
+    <div class="note"><b>여러분이 방금 한 일 →</b> 실제 관측 데이터로 그래프를 그리고,
+    모델을 맞춰 허블 상수와 감속 매개변수를 구하고, q가 음수임을 확인해
+    <b>우주가 가속 팽창한다는 노벨상급 결론</b>을 데이터로 직접 재현했습니다. 🎉</div>
+  </div>
+</section>
+
+<!-- ============ 교사용 ============ -->
+<section id="teacher">
+  <div class="eyebrow">For Teachers</div>
+  <h2>교사용 노트 · 수업 운영 가이드</h2>
+  <div class="card">
+    <h3>차시 운영(예시 · 50분 기준)</h3>
+    <div class="timeline">
+      <div class="tl"><b>도입 (8분)</b> — 배경 이야기 ①②. “우주는 감속할 것이다”라는 직관을 먼저 끌어낸다.</div>
+      <div class="tl"><b>전개 1 (12분)</b> — 활동 1·2. 데이터를 그리고 슬라이더로 허블 상수를 ‘발견’시킨다(정답을 먼저 주지 않기).</div>
+      <div class="tl"><b>전개 2 (15분)</b> — 활동 3·4. 먼 데이터의 휘어짐 → q&lt;0 → 가속. Q3·Q4를 모둠 토론.</div>
+      <div class="tl"><b>정리 (10분)</b> — 결론. 암흑에너지·노벨상. “데이터가 직관을 뒤집은” 과학의 과정을 강조.</div>
+      <div class="tl"><b>심화 (5분/선택)</b> — 원본 Colab(파이썬)으로 직접 코드 실행, 카이제곱·curve_fit 개념 확장.</div>
+    </div>
+    <h3>평가 관점(데이터 리터러시)</h3>
+    <p>① 오차 막대를 고려해 추세를 읽는가 ② 모델–데이터의 잔차(벗어남)를 해석하는가
+    ③ 매개변수(H, q)의 부호·크기를 물리적 의미로 연결하는가 ④ 데이터로부터 결론을 정당화하는가.</p>
+    <h3>데이터 · 코드 출처</h3>
+    <p>본 사이트의 그래프는 학생용 원본 파이썬 코드(<span class="kbd">1a형_초신성_자료_해석하기.py</span>)와
+    동일한 데이터(206개)·모델을 자바스크립트로 옮겨 브라우저에서 바로 계산되도록 한 것입니다.
+    데이터 원출처: A. Dempsey, <i>“Fitting the Universe”</i> (dark_energy 튜토리얼).
+    계산 방식: 가중 최소제곱법으로 χ²를 최소화 → 선형 모델에서 H, 2차 모델에서 H·q 산출,
+    암흑에너지 비율은 <span class="kbd">0.15 − q</span> 로 추정.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <b>Ia형 초신성으로 밝히는 우주의 가속 팽창</b> · 데이터 사이언스 천문학 수업 자료<br>
+  실제 초신성 관측 데이터 206개 내장 · 모든 그래프는 브라우저에서 실시간 계산됩니다.<br>
+  그래프 라이브러리: Plotly.js · 인터넷 연결 시 그래프가 표시됩니다.
+</footer>
+
+<script>
+/* ===================== 실제 초신성 데이터 (z, d[Mpc], d_err) ===================== */
+const RAW="0.01,51.5229,8.77905;0.01,43.6516,7.63887;0.01,55.4626,9.96117;0.013,63.6796,9.09091;0.013,55.7186,7.69781;0.014,66.9885,8.9463;0.014,66.6807,8.9052;0.014,76.913,10.2717;0.015,82.4138,10.6268;0.016,80.5378,10.014;0.016,66.9885,8.32932;0.016,76.2079,9.47566;0.016,79.4328,9.87665;0.017,68.5488,8.20765;0.017,78.343,9.38035;0.017,83.946,10.4378;0.017,87.4984,11.2825;0.017,87.0964,10.4284;0.018,98.1748,11.3028;0.018,72.1107,8.30206;0.019,82.7942,9.53204;0.021,102.329,10.8386;0.023,106.66,10.8061;0.023,117.49,11.9033;0.024,104.232,10.5601;0.025,120.226,12.1806;0.025,104.232,10.5601;0.026,130.017,12.5738;0.026,133.66,13.5415;0.026,117.49,12.4444;0.027,151.356,14.6374;0.028,127.644,12.9321;0.029,138.038,13.3495;0.029,168.267,16.2729;0.03,151.356,14.6374;0.031,147.231,14.2385;0.032,164.437,15.1452;0.033,127.644,12.3443;0.034,172.982,15.9322;0.036,159.221,15.398;0.036,171.396,15.7861;0.036,189.671,16.5958;0.038,215.774,18.8799;0.04,188.799,17.389;0.043,201.372,17.6197;0.045,250.035,20.7261;0.046,186.209,18.008;0.049,204.174,18.8051;0.05,233.346,23.6411;0.05,259.418,22.6986;0.052,270.396,22.4139;0.053,245.471,21.4783;0.056,289.734,25.3512;0.058,266.686,23.3345;0.061,289.734,29.3541;0.063,341.979,29.9226;0.071,359.749,31.4774;0.075,358.096,31.3328;0.079,387.258,32.101;0.088,411.15,53.0156;0.101,549.541,50.6146;0.124,688.652,69.7699;0.172,907.821,75.252;0.18,990.832,82.1331;0.249,1419.06,111.095;0.263,1492.79,116.868;0.278,1592.21,300.628;0.285,1527.57,119.59;0.3,1592.21,183.31;0.32,1949.84,161.629;0.331,1682.67,131.733;0.334,1527.57,211.041;0.337,1940.89,151.948;0.34,2004.47,156.926;0.357,2118.36,165.842;0.358,2147.83,168.149;0.369,2157.74,168.925;0.371,2157.74,168.925;0.38,2535.13,256.843;0.388,2594.18,226.986;0.4,2558.59,223.872;0.415,2466.04,193.061;0.416,2630.27,230.144;0.425,2177.71,401.149;0.43,2964.83,341.339;0.43,2924.15,457.851;0.43,2466.04,193.061;0.43,2500.35,207.261;0.44,2594.18,226.986;0.449,2570.4,201.231;0.45,2666.86,257.908;0.45,2630.27,278.595;0.455,2870.78,370.172;0.459,3419.79,346.472;0.46,2301.44,423.941;0.46,2792.54,411.524;0.461,2779.71,217.618;0.463,2844.46,222.687;0.47,3564.51,344.719;0.47,3515.6,372.369;0.47,3090.3,241.933;0.472,3104.56,271.643;0.474,3647.54,369.546;0.475,2805.43,258.39;0.477,2992.26,289.378;0.478,3133.29,331.874;0.48,2978.52,274.332;0.49,3019.95,347.685;0.495,2818.38,246.604;0.496,2964.83,232.11;0.5,3531.83,390.352;0.5,3515.6,323.799;0.504,3326.6,260.432;0.508,2741.57,441.89;0.511,3681.29,356.012;0.518,3681.29,525.542;0.526,3250.87,269.475;0.528,3564.51,410.38;0.532,3597.49,298.207;0.537,3715.35,701.503;0.538,3404.08,282.175;0.54,2466.04,465.618;0.543,3419.79,299.226;0.55,3419.79,267.729;0.552,3388.44,265.274;0.557,3467.37,271.453;0.57,3749.73,535.312;0.57,3630.78,418.009;0.571,3388.44,280.878;0.579,3732.5,326.587;0.58,4055.09,392.162;0.581,3357.38,293.764;0.582,4111.5,321.88;0.592,3548.13,310.455;0.604,3467.37,271.453;0.61,3944.57,308.812;0.613,4265.8,353.605;0.615,3715.35,393.526;0.62,4187.94,540.012;0.62,4385.31,363.512;0.627,3854.78,301.783;0.63,4487.45,764.623;0.633,4613.18,382.4;0.64,3999.45,460.453;0.643,4385.31,363.512;0.657,4508.17,415.218;0.67,4345.1,480.238;0.679,5199.96,454.987;0.688,4425.88,346.493;0.695,4385.31,383.707;0.707,4830.59,467.159;0.73,4943.11,409.749;0.735,4246.2,371.535;0.74,4742.42,480.472;0.74,4677.35,646.2;0.756,5345.64,418.499;0.771,4207.27,329.378;0.778,5780.96,931.781;0.791,5105.05,423.173;0.798,5970.35,852.329;0.8,5420.01,474.241;0.811,6698.85,956.329;0.811,6223,1003.03;0.815,5623.41,854.594;0.815,6576.58,848.015;0.822,5571.86,692.803;0.828,6194.41,1312.21;0.828,5223.96,1467.49;0.83,5888.44,515.228;0.832,5128.61,684.926;0.839,4897.79,451.103;0.84,5420.01,524.161;0.854,6194.41,827.263;0.86,6397.35,883.826;0.87,7177.94,1123.89;0.882,5997.91,828.642;0.884,6982.32,610.941;0.9,5345.64,615.44;0.905,5997.91,828.642;0.935,6223,831.082;0.949,5470.16,806.113;0.949,6309.57,697.36;0.95,6251.73,978.869;0.95,6729.77,960.743;0.954,5888.44,732.166;0.954,7244.36,900.761;0.961,6854.88,1041.74;0.97,8590.14,1424.13;0.975,6950.24,832.183;0.977,6053.41,724.801;1.01,8994.98,787.044;1.02,8016.78,701.454;1.02,6280.58,780.925;1.056,7413.1,785.188;1.12,8590.14,712.063;1.14,8749.84,1168.54;1.14,7726.81,1103.08;1.199,6886.52,1078.26;1.23,10814.3,1145.44;1.23,9862.79,908.397;1.3,10280.2,946.838;1.305,7979.95,1102.47;1.34,9638.29,1375.96;1.37,11117.3,1279.93;1.39,9549.93,835.602;1.755,11749,1893.71";
+const SN = RAW.split(';').map(s=>{const p=s.split(',');return{z:+p[0],d:+p[1],e:+p[2]};});
+const C = 3e5; // 빛의 속도 km/s
+
+/* ----- 공통 유틸 ----- */
+const Z = SN.map(p=>p.z), D = SN.map(p=>p.d), E = SN.map(p=>p.e);
+const SNnear = SN.filter(p=>p.z<=0.1);            // 허블 법칙이 깔끔한 가까운 초신성
+const zline = (()=>{const a=[];for(let z=0;z<=1.8;z+=0.01)a.push(+z.toFixed(3));return a;})();
+const znear = (()=>{const a=[];for(let z=0;z<=0.105;z+=0.002)a.push(+z.toFixed(3));return a;})();
+
+const LAYOUT = (title)=>({
+  title:{text:title,font:{color:'#dfe7ff',size:16}},
+  paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'#0c1326',
+  font:{color:'#9fb0d8'}, margin:{l:70,r:20,t:46,b:55},
+  xaxis:{title:'적색편이 z (멀어지는 정도)',gridcolor:'#1f2b50',zerolinecolor:'#2a3a66',color:'#9fb0d8'},
+  yaxis:{title:'거리 d (Mpc)',gridcolor:'#1f2b50',zerolinecolor:'#2a3a66',color:'#9fb0d8'},
+  legend:{x:0.02,y:0.98,bgcolor:'rgba(22,31,61,.7)',bordercolor:'#2a3a66',borderwidth:1},
+  hovermode:'closest'
+});
+const CONFIG={responsive:true,displayModeBar:false};
+
+function dataTrace(showErr,pts){
+  pts=pts||SN;
+  return {x:pts.map(p=>p.z),y:pts.map(p=>p.d),
+    error_y:showErr?{type:'data',array:pts.map(p=>p.e),visible:true,color:'rgba(77,182,255,.35)',thickness:1,width:0}:{visible:false},
+    mode:'markers',type:'scatter',name:'초신성 관측 데이터',
+    marker:{color:'#4db6ff',size:6,line:{color:'#0a1a3a',width:1},opacity:.85}};
+}
+// 가중 최소제곱: 직선 d=a*z (원점 통과), 반환 a, H=C/a
+function fitLinear(pts){let sxy=0,sxx=0;for(const p of pts){const w=1/(p.e*p.e);sxy+=w*p.z*p.d;sxx+=w*p.z*p.z;}const a=sxy/sxx;return {a,H:C/a};}
+// 가중 최소제곱: d=a*z+b*z^2, 반환 H=C/a, q=1-2b/a
+function fitQuad(pts){
+  let s11=0,s12=0,s22=0,t1=0,t2=0;
+  for(const p of pts){const w=1/(p.e*p.e),z=p.z,d=p.d;
+    s11+=w*z*z; s12+=w*z*z*z; s22+=w*z*z*z*z; t1+=w*z*d; t2+=w*z*z*d;}
+  const det=s11*s22-s12*s12; const a=(t1*s22-t2*s12)/det; const b=(s11*t2-s12*t1)/det;
+  return {a,b,H:C/a,q:1-2*b/a};
+}
+function chi2Linear(H){let s=0;for(const p of SNnear){const m=C*p.z/H;s+=((m-p.d)/p.e)**2;}return s;}
+function chi2Quad(H,q){let s=0;for(const p of SN){if(p.z>0.5)continue;const m=C*(p.z+0.5*(1-q)*p.z*p.z)/H;s+=((m-p.d)/p.e)**2;}return s;}
+
+/* ===================== 활동 1 ===================== */
+let p1err=true, p1drawn=false;
+function drawPlot1(){
+  p1drawn=true;
+  Plotly.newPlot('plot1',[dataTrace(p1err)],LAYOUT('실제 Ia형 초신성 206개의 적색편이–거리 데이터'),CONFIG);
+}
+function togglePlot1Err(){p1err=!p1err; if(p1drawn)drawPlot1();}
+
+/* ===================== 활동 2 ===================== */
+function modelLinear(H){return znear.map(z=>C*z/H);}
+function updatePlot2(){
+  const H=+document.getElementById('Hslider').value;
+  document.getElementById('Hval').textContent=H;
+  document.getElementById('Hstat').textContent=H;
+  const chi=chi2Linear(H);
+  document.getElementById('chiStat').textContent=chi.toFixed(0);
+  // 색: χ²가 작을수록 초록
+  const best=chi2Linear(fitLinear(SNnear).H);
+  const box=document.getElementById('chiBox');
+  box.className='stat'+(chi<best*1.15?' good':'');
+  const traces=[dataTrace(false,SNnear),
+    {x:znear,y:modelLinear(H),mode:'lines',type:'scatter',name:'허블 법칙 직선 d=cz/H',line:{color:'#ff5d6c',width:3}}];
+  const lay=LAYOUT('가까운 초신성(z ≤ 0.1)으로 측정한 허블 상수 H = '+H+' km/s/Mpc');
+  lay.xaxis.range=[0,0.105];
+  Plotly.react('plot2',traces,lay,CONFIG);
+}
+function bestFitLinear(){
+  const H=fitLinear(SNnear).H;
+  const s=document.getElementById('Hslider');
+  // 애니메이션으로 슬라이더 이동
+  let cur=+s.value; const tgt=Math.round(H*2)/2;
+  const iv=setInterval(()=>{cur+= (tgt-cur)*0.25; if(Math.abs(tgt-cur)<0.3){cur=tgt;clearInterval(iv);} s.value=cur; updatePlot2();},30);
+}
+function resetH(){document.getElementById('Hslider').value=70;updatePlot2();}
+
+/* ===================== 활동 3 ===================== */
+let p3resid=false;
+function drawPlot3(){
+  const low=SN.filter(p=>p.z>=0.01&&p.z<=0.09);
+  const fit=fitLinear(low);
+  document.getElementById('HlowStat').textContent=fit.H.toFixed(1);
+  const yline=zline.map(z=>C*z/fit.H);
+  if(!p3resid){
+    const traces=[
+      dataTrace(false),
+      {x:zline,y:yline,mode:'lines',type:'scatter',name:'가까운 데이터로 정한 예상선(연장)',line:{color:'#ff5d6c',width:3,dash:'solid'}},
+      {x:SN.filter(p=>p.z<=0.09).map(p=>p.z),y:SN.filter(p=>p.z<=0.09).map(p=>p.d),mode:'markers',type:'scatter',name:'기준이 된 가까운 초신성',marker:{color:'#46d39a',size:7,line:{color:'#06351f',width:1}}}
+    ];
+    Plotly.react('plot3',traces,LAYOUT('가까운 데이터로 그은 직선을 먼 우주까지 연장'),CONFIG);
+  }else{
+    // 잔차: 실제 d - 예상 d
+    const res=SN.map(p=>p.d - C*p.z/fit.H);
+    const lay=LAYOUT('예상선 대비 실제 거리 차이 (양수=예상보다 멀다=어둡다)');
+    lay.yaxis.title='실제 거리 − 예상 거리 (Mpc)';
+    Plotly.react('plot3',[
+      {x:Z,y:res,mode:'markers',type:'scatter',name:'예상과의 차이',
+        marker:{color:res.map(r=>r>=0?'#ff5d6c':'#4db6ff'),size:6,line:{color:'#0a1a3a',width:1}}},
+      {x:[0,1.8],y:[0,0],mode:'lines',type:'scatter',name:'예상선(차이=0)',line:{color:'#9fb0d8',width:2,dash:'dot'}}
+    ],lay,CONFIG);
+  }
+}
+function togglePlot3Residual(){p3resid=!p3resid;drawPlot3();}
+
+/* ===================== 활동 4 ===================== */
+function modelQuad(H,q){return zline.filter(z=>z<=0.55).map(z=>C*(z+0.5*(1-q)*z*z)/H);}
+function updatePlot4(){
+  const H=+document.getElementById('H4slider').value;
+  const q=+document.getElementById('qslider').value;
+  document.getElementById('H4val').textContent=H;
+  document.getElementById('qval').textContent=q.toFixed(2);
+  document.getElementById('qStat').textContent=q.toFixed(2);
+  const chi=chi2Quad(H,q);
+  document.getElementById('chi4Stat').textContent=chi.toFixed(0);
+  // 판정
+  const v=document.getElementById('verdict'); const vb=document.getElementById('verdictBox'); const qb=document.getElementById('qBox');
+  if(q<-0.05){v.textContent='가속 팽창 🚀';v.style.color='#ff5d6c';qb.className='stat good';}
+  else if(q>0.05){v.textContent='감속 팽창 🛑';v.style.color='#4db6ff';qb.className='stat';}
+  else{v.textContent='거의 일정';v.style.color='#9fb0d8';qb.className='stat';}
+  const zx=zline.filter(z=>z<=0.55);
+  const traces=[dataTrace(false),
+    {x:zx,y:modelQuad(H,q),mode:'lines',type:'scatter',name:'2차(곡선) 모델',line:{color:'#9d7bff',width:3}},
+    {x:zx,y:zx.map(z=>C*z/H),mode:'lines',type:'scatter',name:'비교용 직선(가속·감속 없음)',line:{color:'#ff5d6c',width:2,dash:'dash'}}];
+  const lay=LAYOUT('곡선 모델  H='+H+',  q='+q.toFixed(2));
+  lay.xaxis.range=[0,0.56];
+  Plotly.react('plot4',traces,lay,CONFIG);
+}
+function bestFitQuad(){
+  const fit=fitQuad(SN.filter(p=>p.z<=0.5));
+  const Hs=document.getElementById('H4slider'), qs=document.getElementById('qslider');
+  const Ht=Math.max(50,Math.min(100,Math.round(fit.H*2)/2));
+  const qt=Math.max(-2,Math.min(1.5,Math.round(fit.q*20)/20));
+  let cH=+Hs.value, cq=+qs.value;
+  const iv=setInterval(()=>{
+    cH+=(Ht-cH)*0.25; cq+=(qt-cq)*0.25;
+    if(Math.abs(Ht-cH)<0.3&&Math.abs(qt-cq)<0.02){cH=Ht;cq=qt;clearInterval(iv);
+      // 암흑에너지 안내
+      const dark=0.15-fit.q;
+      const note=document.getElementById('darkNote'), msg=document.getElementById('darkMsg');
+      note.style.display='block';
+      msg.innerHTML='데이터에 가장 잘 맞는 값은 <b>H ≈ '+fit.H.toFixed(1)+' km/s/Mpc</b>, '+
+        '<b style="color:#ff5d6c">q ≈ '+fit.q.toFixed(2)+'</b> 입니다. q가 <b>음수</b>이므로 우주는 <b style="color:#ff5d6c">가속 팽창</b>! '+
+        '이 결과는 우주 에너지의 약 <b style="color:#9d7bff">'+(dark*100).toFixed(0)+'%</b> 이상이 '+
+        '중력에 반하는 <span style="color:#9d7bff;font-weight:700">암흑에너지</span>임을 시사합니다.';
+    }
+    Hs.value=cH; qs.value=cq; updatePlot4();
+  },30);
+}
+function resetQuad(){document.getElementById('H4slider').value=70;document.getElementById('qslider').value=0.5;
+  document.getElementById('darkNote').style.display='none';updatePlot4();}
+
+/* ===================== 초기 렌더 ===================== */
+window.addEventListener('load',()=>{
+  drawPlot1();
+  updatePlot2();
+  drawPlot3();
+  updatePlot4();
+});
+</script>
+</body>
+</html>
